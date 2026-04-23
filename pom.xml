@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>dev.callisto</groupId>
+    <artifactId>callisto</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>Callisto</name>
+    <description>Java Agent that intercepts runtime exceptions and classifies them using LLMs</description>
+
+    <modules>
+        <module>callisto-pr</module>
+        <module>callisto-smoke-test</module>
+    </modules>
+
+    <properties>
+        <java.version>11</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Dependency versions — do NOT change without CLAUDE.md approval -->
+        <bytebuddy.version>1.14.19</bytebuddy.version>
+        <jackson.version>2.17.3</jackson.version>
+        <picocli.version>4.7.7</picocli.version>
+        <junit.version>5.10.2</junit.version>
+
+        <!-- Build plugin versions -->
+        <maven.shade.version>3.6.2</maven.shade.version>
+        <maven.failsafe.version>3.2.5</maven.failsafe.version>
+
+        <!-- GitHub API — shaded under dev.callisto.shaded.github (Phase 5) -->
+        <github.api.version>1.327</github.api.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Byte Buddy instrumentation — DO NOT add byte-buddy-agent (see RESEARCH.md Pitfall 4) -->
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>${bytebuddy.version}</version>
+            </dependency>
+
+            <!-- Jackson JSON — shaded under dev.callisto.shaded.jackson -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+            <!-- picocli CLI framework -->
+            <dependency>
+                <groupId>info.picocli</groupId>
+                <artifactId>picocli</artifactId>
+                <version>${picocli.version}</version>
+            </dependency>
+
+            <!-- JUnit 5 for tests -->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- kohsuke/github-api — GitHub REST API for branch/commit/PR creation (Phase 5) -->
+            <!-- Shaded under dev.callisto.shaded.github — relocation already in callisto-agent/pom.xml -->
+            <dependency>
+                <groupId>org.kohsuke</groupId>
+                <artifactId>github-api</artifactId>
+                <version>${github.api.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+</project>

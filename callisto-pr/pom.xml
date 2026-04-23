@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>dev.callisto</groupId>
+        <artifactId>callisto</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>callisto-pr</artifactId>
+    <name>Callisto Agent</name>
+    <description>Fat JAR Java Agent — dual entry-point (premain + Main-Class)</description>
+
+    <dependencies>
+        <!-- Byte Buddy instrumentation — shaded under dev.callisto.shaded.bytebuddy -->
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+        </dependency>
+
+        <!-- Jackson — shaded under dev.callisto.shaded.jackson -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!-- picocli CLI — shaded under dev.callisto.shaded.picocli -->
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+        </dependency>
+
+        <!-- JUnit 5 — version inherited from root dependencyManagement -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- kohsuke/github-api — Draft PR creation via GitHub Git Data API -->
+        <dependency>
+            <groupId>org.kohsuke</groupId>
+            <artifactId>github-api</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>callisto</finalName>
+
+        <plugins>
+            <!-- maven-surefire-plugin: JUnit 5 support for unit tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+            </plugin>
+
+            <!--
+                maven-shade-plugin: produces the fat JAR with:
+                - Dual-entry MANIFEST.MF (Premain-Class + Main-Class)
+                - All deps relocated under dev.callisto.shaded.*
+                - ServicesResourceTransformer for Byte Buddy SPI files
+
+                NOTE: Do NOT configure Premain-Class/Main-Class in maven-jar-plugin.
+                Only ManifestResourceTransformer owns MANIFEST.MF entries (see RESEARCH.md Pitfall 2).
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven.shade.version}</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+
+                            <transformers>
+                                <!-- Dual-entry MANIFEST.MF — both premain and Main-Class -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Premain-Class>dev.callisto.Agent</Premain-Class>
+                                        <Main-Class>dev.callisto.Cli</Main-Class>
+                                        <Can-Retransform-Classes>true</Can-Retransform-Classes>
+                                        <Can-Redefine-Classes>true</Can-Redefine-Classes>
+                                    </manifestEntries>
+                                </transformer>
+                                <!-- Required for Byte Buddy SPI (META-INF/services) — see RESEARCH.md Anti-Patterns -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+
+                            <relocations>
+                                <!-- Byte Buddy + all transitives -->
+                                <relocation>
+                                    <pattern>net.bytebuddy</pattern>
+                                    <shadedPattern>dev.callisto.shaded.bytebuddy</shadedPattern>
+                                </relocation>
+                                <!--
+                                    Jackson: use com.fasterxml.jackson (not just .databind)
+                                    to cover jackson-core and jackson-annotations transitives.
+                                    See RESEARCH.md Pitfall 1: Incomplete Relocation.
+                                -->
+                                <relocation>
+                                    <pattern>com.fasterxml.jackson</pattern>
+                                    <shadedPattern>dev.callisto.shaded.jackson</shadedPattern>
+                                </relocation>
+                                <!-- picocli -->
+                                <relocation>
+                                    <pattern>info.picocli</pattern>
+                                    <shadedPattern>dev.callisto.shaded.picocli</shadedPattern>
+                                </relocation>
+                                <!-- kohsuke/github-api — prepared for Phase 5, no dep yet -->
+                                <relocation>
+                                    <pattern>org.kohsuke</pattern>
+                                    <shadedPattern>dev.callisto.shaded.github</shadedPattern>
+                                </relocation>
+                                <!-- commons-io: transitive dep of kohsuke/github-api -->
+                                <relocation>
+                                    <pattern>org.apache.commons</pattern>
+                                    <shadedPattern>dev.callisto.shaded.commons</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
