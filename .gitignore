@@ -1,0 +1,24 @@
+# Maven build output
+target/
+**/target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+
+# Callisto runtime data
+.callisto/
+**/.callisto/
+
+# Claude Code local config
+.claude/
+
+# GSD planning artifacts
+.planning/
+
+# Internal docs
+docs/
