@@ -26,7 +26,6 @@ your-app.jar  ──►  -javaagent:callisto.jar
 | Requirement | Purpose |
 |---|---|
 | Java 11+ | Agent and CLI |
-| `ANTHROPIC_API_KEY` | Exception classification (default LLM) |
 | `GITHUB_TOKEN` with `repo` scope | `draft-pr` command |
 | `claude` CLI (authenticated) | `draft-pr` patch generation — [install](https://claude.ai/download) |
 
